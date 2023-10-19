@@ -24,9 +24,9 @@ public class ConstantsSymbolTable {
         if(rootConstantsNode == null){
             rootConstantsNode = insertConstantsNode;
             return rootConstantsNode;
-        } else if (rootConstantsNode.getLeftChild().getValue().getFirst() < insertConstantsNode.getValue().getFirst()) {
+        } else if (rootConstantsNode.getValue().getFirst() < insertConstantsNode.getValue().getFirst()) {
             rootConstantsNode.setLeftChild(insert(rootConstantsNode.getLeftChild(), insertConstantsNode));
-        } else if (rootConstantsNode.getLeftChild().getValue().getFirst() > insertConstantsNode.getValue().getFirst()) {
+        } else if (rootConstantsNode.getValue().getFirst() > insertConstantsNode.getValue().getFirst()) {
             rootConstantsNode.setRightChild(insert(rootConstantsNode.getRightChild(), insertConstantsNode));
         }
         return rootConstantsNode;
@@ -113,7 +113,7 @@ public class ConstantsSymbolTable {
         return node;
     }
 
-    ConstantsNode buildTree(ConstantsNode rootNode){
+    public ConstantsNode buildTree(ConstantsNode rootNode){
         Vector<ConstantsNode> nodes = new Vector<>();
         storeBSTNodes(rootNode, nodes);
 
