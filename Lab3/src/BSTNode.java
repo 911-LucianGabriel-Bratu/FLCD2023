@@ -1,29 +1,30 @@
-public class ConstantsNode {
-    private ConstantsNode leftChild;
-    private ConstantsNode rightChild;
+public class BSTNode {
+    BSTNode leftChild;
+    BSTNode rightChild;
+
     private Pair<Integer, Object> value;
     private static Integer position = 0;
 
-    public ConstantsNode(Object o){
+    public BSTNode(Object o){
         this.leftChild = null;
         this.rightChild = null;
         this.value = new Pair<>(position, o);
-        ConstantsNode.position += 1;
+        BSTNode.position += 1;
     }
 
-    public ConstantsNode getLeftChild() {
+    public BSTNode getLeftChild() {
         return leftChild;
     }
 
-    public void setLeftChild(ConstantsNode leftChild) {
+    public void setLeftChild(BSTNode leftChild) {
         this.leftChild = leftChild;
     }
 
-    public ConstantsNode getRightChild() {
+    public BSTNode getRightChild() {
         return rightChild;
     }
 
-    public void setRightChild(ConstantsNode rightChild) {
+    public void setRightChild(BSTNode rightChild) {
         this.rightChild = rightChild;
     }
 
@@ -40,6 +41,6 @@ public class ConstantsNode {
     }
 
     public static void setPosition(Integer position) {
-        ConstantsNode.position = position;
+        BSTNode.position = position;
     }
 }
