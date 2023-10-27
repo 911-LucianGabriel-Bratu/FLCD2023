@@ -1,3 +1,5 @@
+package symbol_table;
+
 import java.util.Objects;
 import java.util.Vector;
 
@@ -42,6 +44,23 @@ public class SymbolTable {
         }
 
         return search(rootNode.getRightChild(), key);
+    }
+
+    public BSTNode searchForValue(BSTNode rootNode, Object value) {
+        if (rootNode == null) {
+            return null;
+        }
+
+        if (rootNode.getValue().getSecond().equals(value)) {
+            return rootNode;
+        }
+
+        BSTNode leftResult = searchForValue(rootNode.leftChild, value);
+        if (leftResult != null) {
+            return leftResult;
+        }
+
+        return searchForValue(rootNode.rightChild, value);
     }
 
     public Object findValue(Integer key){
@@ -92,6 +111,18 @@ public class SymbolTable {
         System.out.println("(" + node.getValue().getFirst() + ", " + node.getValue().getSecond() + ") ");
         preOrder(node.getLeftChild());
         preOrder(node.getRightChild());
+    }
+
+    public String preOrderStr(BSTNode node) {
+        if (node == null) {
+            return "";
+        }
+
+        String nodeString = "(" + node.getValue().getFirst() + ", " + node.getValue().getSecond() + ")\n";
+        String leftSubtree = preOrderStr(node.getLeftChild());
+        String rightSubtree = preOrderStr(node.getRightChild());
+
+        return nodeString + leftSubtree + rightSubtree;
     }
 
     public void storeBSTNodes(BSTNode rootNode, Vector<BSTNode> nodes){
