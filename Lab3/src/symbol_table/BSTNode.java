@@ -1,3 +1,7 @@
+package symbol_table;
+
+import utils.Pair;
+
 public class BSTNode {
     BSTNode leftChild;
     BSTNode rightChild;

@@ -1,0 +1,13 @@
+arithmetic operators: +, -, *, mod, div
+
+logical operators: &&, ||, !
+
+relational operators: <, >, >=, <=, ==, !=
+
+assignment operators: =
+
+delimiters: [,],{,},(,)
+
+separators: ,, ;,
+
+reserved words: if, integer, string, character, read, print, while, for, else, array, of
