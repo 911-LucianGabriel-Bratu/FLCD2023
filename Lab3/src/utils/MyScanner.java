@@ -196,6 +196,7 @@ public class MyScanner {
                                                 PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
                                             }
                                         }
+                                        PIF.add(new Pair<>(";", -1));
                                     }
                                     else if (isNumeric(entry_sliced)) {
                                         if(symbolTable.getRoot() == null){
@@ -214,13 +215,14 @@ public class MyScanner {
                                                 PIF.add(new Pair<>("constant", bstNode.getValue().getFirst()));
                                             }
                                         }
+                                        PIF.add(new Pair<>(";", -1));
                                     }
                                     else{
-                                        throw new Exception("Program is lexically incorrect. Mistake on line " + lineIndex);
+                                        throw new Exception("Program is lexically incorrect. Mistake on line " + lineIndex + ". Token is: " + entry_sliced);
                                     }
                                 }
                                 else{
-                                    throw new Exception("Program is lexically incorrect. Mistake on line " + lineIndex);
+                                    throw new Exception("Program is lexically incorrect. Mistake on line " + lineIndex + ". Token is: " + entry);
                                 }
                             }
                         }
