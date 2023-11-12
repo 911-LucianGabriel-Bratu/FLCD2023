@@ -1,9 +1,65 @@
+import finite_automata.FiniteAutomata;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
 import utils.MyScanner;
 
+import java.io.IOException;
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) throws Exception {
+        FiniteAutomata finiteAutomata = new FiniteAutomata("FA.in");
+        finiteAutomata.scanFAFile();
+        int option = -1;
+
+        Scanner scanner = new Scanner(System.in);
+
+        while(true){
+            System.out.println("Select the desired operation:");
+            System.out.println("1. Print the set of states");
+            System.out.println("2. Print the alphabet");
+            System.out.println("3. Print the transitions");
+            System.out.println("4. Print the initial state");
+            System.out.println("5. Print the final states");
+            System.out.println("6. Verify DFA");
+            System.out.println("7. Exit");
+            System.out.println("Enter the operation number:");
+            if(scanner.hasNext()){
+                option = scanner.nextInt();
+                scanner.nextLine();
+            }
+            switch (option){
+                case 1:
+                    System.out.println(finiteAutomata.statesToString());
+                    break;
+                case 2:
+                    System.out.println(finiteAutomata.alphabetToString());
+                    break;
+                case 3:
+                    System.out.println(finiteAutomata.transitionsToString());
+                    break;
+                case 4:
+                    System.out.println(finiteAutomata.initialStateToString());
+                    break;
+                case 5:
+                    System.out.println(finiteAutomata.finalStatesToString());
+                    break;
+                case 6:
+                    System.out.println("Enter dfa: ");
+                    if(scanner.hasNext()){
+                        String dfa = scanner.next();
+                        System.out.println(finiteAutomata.isDFAValid(dfa));
+                    }
+                    break;
+                case 7:
+                    return;
+                default:
+                    System.out.println("Operation not recognized.");
+            }
+        }
+    }
+
+    public static void ScannerDemo() throws IOException {
         MyScanner myScanner = new MyScanner();
         myScanner.scanForTokens("token.in");
         try{
@@ -20,7 +76,6 @@ public class Main {
             myScanner.getFileHandler().writeToFile("ST.out", "");
         }
     }
-
     public static void STDemo(){
         SymbolTable symbolTable = new SymbolTable();
         symbolTable.setRoot(new BSTNode("a"));
