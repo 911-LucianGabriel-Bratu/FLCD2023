@@ -8,7 +8,11 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        FiniteAutomata finiteAutomata = new FiniteAutomata("FA.in");
+        ScannerDemo();
+    }
+
+    public static void FADemo() throws IOException{
+        FiniteAutomata finiteAutomata = new FiniteAutomata("FAIdentifiers.in");
         finiteAutomata.scanFAFile();
         int option = -1;
 

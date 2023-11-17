@@ -1,5 +1,6 @@
 package utils;
 
+import finite_automata.FiniteAutomata;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
 
@@ -13,6 +14,11 @@ public class MyScanner {
     private TreeMap<String, List<String>> tokens = new TreeMap<>();
     private List<Pair<String, Integer>> PIF = new ArrayList<>();
     private SymbolTable symbolTable = new SymbolTable();
+
+    private final FiniteAutomata identifiersFA = new FiniteAutomata("FAIdentifiers.in");
+
+    private final FiniteAutomata integersFA = new FiniteAutomata("FAIntegers.in");
+
     private final FileHandler fileHandler = new FileHandler();
 
     public void scanForTokens(String fileName) throws IOException {
@@ -109,6 +115,8 @@ public class MyScanner {
     }
 
     public void scanProgram(String fileName) throws Exception {
+        integersFA.scanFAFile();
+        identifiersFA.scanFAFile();
         List<String> lines = fileHandler.readFile(fileName);
         List<String> res;
         int lineIndex = 1;
@@ -134,7 +142,7 @@ public class MyScanner {
                             PIF.add(new Pair<>(entry, -1));
                         } else if (Objects.equals(entry, ";")) {
                             PIF.add(new Pair<>(entry, -1));
-                        } else if (isNumeric(entry)) {
+                        } else if (integersFA.isDFAValid(entry)) {
                             if(symbolTable.getRoot() == null){
                                 BSTNode bstNode = new BSTNode(Integer.parseInt(entry));
                                 PIF.add(new Pair<>("constant", bstNode.getValue().getFirst()));
@@ -158,7 +166,7 @@ public class MyScanner {
                             string_constant_var = new StringBuilder(string_constant_var).deleteCharAt(0);
                         }
                         else{
-                            if(isIdentifier(entry)){
+                            if(identifiersFA.isDFAValid(entry)){
                                 if(symbolTable.getRoot() == null){
                                     BSTNode bstNode = new BSTNode(entry);
                                     PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
@@ -179,7 +187,7 @@ public class MyScanner {
                             else {
                                 if(Objects.equals(String.valueOf(entry.charAt(entry.length()-1)), ";")){
                                     String entry_sliced = entry.substring(0, entry.length()-1);
-                                    if(isIdentifier(entry_sliced)){
+                                    if(identifiersFA.isDFAValid(entry_sliced)){
                                         if(symbolTable.getRoot() == null){
                                             BSTNode bstNode = new BSTNode(entry_sliced);
                                             PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
@@ -198,7 +206,7 @@ public class MyScanner {
                                         }
                                         PIF.add(new Pair<>(";", -1));
                                     }
-                                    else if (isNumeric(entry_sliced)) {
+                                    else if (integersFA.isDFAValid(entry_sliced)) {
                                         if(symbolTable.getRoot() == null){
                                             BSTNode bstNode = new BSTNode(Integer.parseInt(entry_sliced));
                                             PIF.add(new Pair<>("constant", bstNode.getValue().getFirst()));
