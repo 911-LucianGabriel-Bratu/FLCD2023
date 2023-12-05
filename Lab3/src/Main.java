@@ -1,4 +1,5 @@
 import finite_automata.FiniteAutomata;
+import grammar.Grammar;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
 import utils.MyScanner;
@@ -8,7 +9,60 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        ScannerDemo();
+        GrammarDemo();
+    }
+
+    public static void GrammarDemo() throws IOException{
+        Grammar grammar = new Grammar("g1.txt");
+        grammar.scanGrammar();
+        int option = -1;
+
+        Scanner scanner = new Scanner(System.in);
+
+        while(true){
+            System.out.println("Select the desired operation:");
+            System.out.println("1. Print the set of nonTerminals");
+            System.out.println("2. Print the set of terminals");
+            System.out.println("3. Print the set of productions");
+            System.out.println("4. Print the set of productions for a given nonTerminal");
+            System.out.println("5. CFG check");
+            System.out.println("6. Exit");
+            System.out.println("Enter the operation number:");
+            if(scanner.hasNext()){
+                option = scanner.nextInt();
+                scanner.nextLine();
+            }
+            switch (option){
+                case 1:
+                    System.out.println(grammar.nonTerminalsToString());
+                    break;
+                case 2:
+                    System.out.println(grammar.terminalsToString());
+                    break;
+                case 3:
+                    System.out.println(grammar.productionsToString());
+                    break;
+                case 4:
+                    System.out.println("Enter nonTerminal: ");
+                    if(scanner.hasNext()){
+                        String nonTerminal = scanner.next();
+                        try{
+                            System.out.println(grammar.productionsForGivenNonTerminalToString(nonTerminal));
+                        }
+                        catch(Exception e){
+                            System.out.println(e.getMessage());
+                        }
+                    }
+                    break;
+                case 5:
+                    System.out.println(grammar.isCFG());
+                    break;
+                case 6:
+                    return;
+                default:
+                    System.out.println("Operation not recognized.");
+            }
+        }
     }
 
     public static void FADemo() throws IOException{
