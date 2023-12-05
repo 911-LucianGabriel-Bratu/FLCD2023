@@ -1,2 +1,5 @@
 G=({S,A};{a,b,c};P;S)
-P:S->aA,A->bA,A->c
+P:
+S->aA
+A->bA
+A->c

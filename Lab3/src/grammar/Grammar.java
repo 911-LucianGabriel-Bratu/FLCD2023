@@ -41,31 +41,25 @@ public class Grammar {
         this.terminals.addAll(terminalsTokenized);
     }
 
-    private void storeProductions(String productions){
-        List<String> productionsTokenized = Tokenizer.tokenize(productions, ",");
-        this.productions.addAll(productionsTokenized);
-    }
-
     public void scanGrammar() throws IOException {
         String nonTerminals;
         String terminals;
         List<String> lines = this.fileHandler.readFile(this.fileName);
-        for(String line: lines){
-            if(line.charAt(0) == 'G'){
-                String contents = Tokenizer.tokenize(line, "=").get(1);
-                contents = contents.substring(1, contents.length()-1);
-                List<String> tokenizedContents = Tokenizer.tokenize(contents, ";");
-                nonTerminals = tokenizedContents.get(0);
-                terminals = tokenizedContents.get(1);
-                this.productionSymbol = tokenizedContents.get(2);
-                this.initialState = tokenizedContents.get(3);
-                storeNonTerminals(nonTerminals);
-                storeTerminals(terminals);
-            }
-            else if(line.charAt(0) == this.productionSymbol.charAt(0)){
-                String productions = Tokenizer.tokenize(line, ":").get(1);
-                storeProductions(productions);
-            }
+        if(lines.get(0).charAt(0) == 'G'){
+            String line = lines.get(0);
+            String contents = Tokenizer.tokenize(line, "=").get(1);
+            contents = contents.substring(1, contents.length()-1);
+            List<String> tokenizedContents = Tokenizer.tokenize(contents, ";");
+            nonTerminals = tokenizedContents.get(0);
+            terminals = tokenizedContents.get(1);
+            this.productionSymbol = tokenizedContents.get(2);
+            this.initialState = tokenizedContents.get(3);
+            storeNonTerminals(nonTerminals);
+            storeTerminals(terminals);
+        }
+        if(lines.get(1).charAt(0) == this.productionSymbol.charAt(0)){
+            List<String> remainingLines = lines.subList(2, lines.size());
+            this.productions.addAll(remainingLines);
         }
     }
 
