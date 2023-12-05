@@ -47,7 +47,7 @@ public class Grammar {
         List<String> lines = this.fileHandler.readFile(this.fileName);
         if(lines.get(0).charAt(0) == 'G'){
             String line = lines.get(0);
-            String contents = Tokenizer.tokenize(line, "=").get(1);
+            String contents = line.substring(2);
             contents = contents.substring(1, contents.length()-1);
             List<String> tokenizedContents = Tokenizer.tokenize(contents, ";");
             nonTerminals = tokenizedContents.get(0);
@@ -101,11 +101,53 @@ public class Grammar {
         }
         else{
             for(String production: this.productions){
-                if(production.charAt(0) == nonTerminal.charAt(0)){
+                int index = production.indexOf("->");
+                String leftSide = production.substring(0, index);
+                if(leftSide.compareTo(nonTerminal) == 0){
                     foundProductions.add(production);
                 }
             }
         }
         return foundProductions;
+    }
+
+    public Set<String> getTerminals() {
+        return terminals;
+    }
+
+    public void setTerminals(Set<String> terminals) {
+        this.terminals = terminals;
+    }
+
+    public Set<String> getNonTerminals() {
+        return nonTerminals;
+    }
+
+    public void setNonTerminals(Set<String> nonTerminals) {
+        this.nonTerminals = nonTerminals;
+    }
+
+    public String getProductionSymbol() {
+        return productionSymbol;
+    }
+
+    public void setProductionSymbol(String productionSymbol) {
+        this.productionSymbol = productionSymbol;
+    }
+
+    public String getStartingSymbol() {
+        return startingSymbol;
+    }
+
+    public void setStartingSymbol(String startingSymbol) {
+        this.startingSymbol = startingSymbol;
+    }
+
+    public Set<String> getProductions() {
+        return productions;
+    }
+
+    public void setProductions(Set<String> productions) {
+        this.productions = productions;
     }
 }

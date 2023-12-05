@@ -1,0 +1,128 @@
+G=({letter,nonZeroDigit,digit,digitList,character,string,identifier,naturalNr,nonZeroNatNr,integer,boolConstant,lowPrecedenceOperator,highPrecedenceOperator,logicOperator,program,declaration,basicType,arrayType,type,compoundStatement,statementList,statement,assignmentStatement,expression,term,factor,ioKeyword,ioStatement,operationStatement,ifStatement,whileStatement,condition};{Q,W,E,R,T,Y,U,I,O,P,A,S,D,F,G,H,J,K,L,Z,X,C,V,B,N,M,q,w,e,r,t,y,u,i,o,p,a,s,d,f,g,h,j,k,l,z,x,c,v,b,n,m,0,1,2,3,4,5,6,7,8,9,+,-,*,/,<,>,=,!};P;program)
+P:
+letter->Q
+letter->W
+letter->E
+letter->R
+letter->T
+letter->Y
+letter->U
+letter->I
+letter->O
+letter->P
+letter->A
+letter->S
+letter->D
+letter->F
+letter->G
+letter->H
+letter->J
+letter->K
+letter->L
+letter->Z
+letter->X
+letter->C
+letter->V
+letter->B
+letter->N
+letter->M
+letter->q
+letter->w
+letter->e
+letter->r
+letter->t
+letter->y
+letter->u
+letter->i
+letter->o
+letter->p
+letter->a
+letter->s
+letter->d
+letter->f
+letter->g
+letter->h
+letter->j
+letter->k
+letter->l
+letter->z
+letter->x
+letter->c
+letter->v
+letter->b
+letter->n
+letter->m
+nonZeroDigit->1
+nonZeroDigit->2
+nonZeroDigit->3
+nonZeroDigit->4
+nonZeroDigit->5
+nonZeroDigit->6
+nonZeroDigit->7
+nonZeroDigit->8
+nonZeroDigit->9
+digit->0
+digit->nonZeroDigit
+digitList->digit
+digitList->digit digitList
+character->letter
+character->digit
+string->character
+string->character string
+identifier->letter
+identifier->letter string
+naturalNr->0
+naturalNr->nonZeroDigit
+naturalNr->nonZeroDigit digitList
+nonZeroNatNr->nonZeroDigit
+nonZeroNatNr->nonZeroDigit digitList
+integer->0
+integer->nonZeroNatNr
+integer->- nonZeroNatNr
+integer->+ nonZeroNatNr
+boolConstant->true
+boolConstant->false
+lowPrecedenceOperator->+
+lowPrecedenceOperator->-
+highPrecedenceOperator->*
+highPrecedenceOperator->/
+logicOperator-><
+logicOperator-><=
+logicOperator->==
+logicOperator->!=
+logicOperator->>=
+logicOperator->>
+program->main compoundStatement
+declaration->identifier : type
+declaration->identifier : type = expression
+basicType->bool
+basicType->int
+basicType->string
+arrayType->basicType [ nonZeroNatNr ]
+type->basicType
+type->arrayType
+compoundStatement->{ statementList }
+statementList->statement
+statementList->statement ; statementList
+statement->declaration
+statement->assignmentStatement
+statement->operationStatement
+assignmentStatement->identifier = expression
+expression->term
+expression->expression lowPrecedenceOperator term
+term->factor
+term->term highPrecedenceOperator factor
+factor->( expression )
+factor->identifier
+factor->integer
+factor->boolConstant
+ioKeyword->scan
+ioKeyword->print
+ioStatement->ioKeyword ( identifier )
+operationStatement->compoundStatement
+operationStatement->ifStatement
+operationStatement->whileStatement
+ifStatement->if ( condition ) compoundStatement
+ifStatement->if ( condition ) compoundStatement else compoundStatement
+whileStatement->while ( condition ) compoundStatement
+condition->expression logicOperator expression

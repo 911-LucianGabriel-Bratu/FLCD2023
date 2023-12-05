@@ -1,5 +1,6 @@
 import finite_automata.FiniteAutomata;
 import grammar.Grammar;
+import parser.LR;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
 import utils.MyScanner;
@@ -9,11 +10,17 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        GrammarDemo();
+        //GrammarDemo();
+        LRParserDemo();
+    }
+
+    public static void LRParserDemo() throws Exception {
+        LR lr = new LR("g1.txt");
+        System.out.println(lr.closure(lr.getProductionsForNonTerminal("S'").get(0)).toString());
     }
 
     public static void GrammarDemo() throws IOException{
-        Grammar grammar = new Grammar("g1.txt");
+        Grammar grammar = new Grammar("g2.txt");
         grammar.scanGrammar();
         int option = -1;
 
