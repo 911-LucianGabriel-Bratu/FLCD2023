@@ -15,7 +15,7 @@ public class Grammar {
 
     private Set<String> productions;
     private String productionSymbol;
-    private String initialState;
+    private String startingSymbol;
     private FileHandler fileHandler;
     private String fileName;
 
@@ -26,7 +26,7 @@ public class Grammar {
         this.fileHandler = new FileHandler();
         this.fileName = fileName;
         this.productionSymbol = "";
-        this.initialState = "";
+        this.startingSymbol = "";
     }
 
     private void storeNonTerminals(String nonTerminals){
@@ -53,7 +53,7 @@ public class Grammar {
             nonTerminals = tokenizedContents.get(0);
             terminals = tokenizedContents.get(1);
             this.productionSymbol = tokenizedContents.get(2);
-            this.initialState = tokenizedContents.get(3);
+            this.startingSymbol = tokenizedContents.get(3);
             storeNonTerminals(nonTerminals);
             storeTerminals(terminals);
         }
@@ -69,13 +69,17 @@ public class Grammar {
 
     public boolean isCFG(){
         boolean isCFG = true;
+        boolean containsStartingSymbolProd = false;
         for(String production: this.productions){
             String leftSide = Tokenizer.tokenize(production, "->").get(0);
             if(!nonTerminals.contains(leftSide)){
                 isCFG = false;
             }
+            if(leftSide.compareTo(startingSymbol) == 0){
+                containsStartingSymbolProd = true;
+            }
         }
-        return isCFG;
+        return isCFG && containsStartingSymbolProd;
     }
 
     public String terminalsToString(){
