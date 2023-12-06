@@ -15,8 +15,10 @@ public class Main {
     }
 
     public static void LRParserDemo() throws Exception {
-        LR lr = new LR("g1.txt");
-        System.out.println(lr.closure(lr.getProductionsForNonTerminal("S'").get(0)).toString());
+        LR lr = new LR("g2.txt");
+        //System.out.println(lr.closure(lr.getProductionsForNonTerminal("S'")).toString());
+        //System.out.println(lr.goto_(lr.getGrammar().getProductions().stream().toList(), "factor"));
+        System.out.println(lr.DetermineCanonicalCollection());
     }
 
     public static void GrammarDemo() throws IOException{

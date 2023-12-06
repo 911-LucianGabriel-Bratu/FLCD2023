@@ -1,4 +1,4 @@
-G=({letter,nonZeroDigit,digit,digitList,character,string,identifier,naturalNr,nonZeroNatNr,integer,boolConstant,lowPrecedenceOperator,highPrecedenceOperator,logicOperator,program,declaration,basicType,arrayType,type,compoundStatement,statementList,statement,assignmentStatement,expression,term,factor,ioKeyword,ioStatement,operationStatement,ifStatement,whileStatement,condition};{Q,W,E,R,T,Y,U,I,O,P,A,S,D,F,G,H,J,K,L,Z,X,C,V,B,N,M,q,w,e,r,t,y,u,i,o,p,a,s,d,f,g,h,j,k,l,z,x,c,v,b,n,m,0,1,2,3,4,5,6,7,8,9,+,-,*,/,<,>,=,!};P;program)
+G=({letter,nonZeroDigit,digit,digitList,character,string,identifier,naturalNr,nonZeroNatNr,integer,boolConstant,lowPrecedenceOperator,highPrecedenceOperator,logicOperator,program,declaration,basicType,arrayType,type,compoundStatement,statementList,statement,assignmentStatement,expression,term,factor,ioKeyword,ioStatement,operationStatement,ifStatement,whileStatement,condition,assignmentKeyword,typeSpecifierKeyword,arraySizeStartSeparator,arraySizeEndSeparator,scopeStartSeparator,scopeEndSeparator,statementSeparator,openedParenthesis,closedParenthesis,programKeyword,ifKeyword,elseKeyword,whileKeyword,ioKeyword,ioKeyword};{Q,W,E,R,T,Y,U,I,O,P,A,S,D,F,G,H,J,K,L,Z,X,C,V,B,N,M,q,w,e,r,t,y,u,i,o,p,a,s,d,f,g,h,j,k,l,z,x,c,v,b,n,m,0,1,2,3,4,5,6,7,8,9,+,-,*,/,<,>,=,!};P;program)
 P:
 letter->Q
 letter->W
@@ -92,37 +92,50 @@ logicOperator->==
 logicOperator->!=
 logicOperator->>=
 logicOperator->>
-program->main compoundStatement
-declaration->identifier : type
-declaration->identifier : type = expression
+assignmentKeyword->=
+typeSpecifierKeyword->:
+arraySizeStartSeparator->[
+arraySizeEndSeparator->]
+scopeStartSeparator->{
+scopeEndSeparator->}
+statementSeparator->;
+openedParenthesis->(
+closedParenthesis->)
+programKeyword->main
+ifKeyword->if
+elseKeyword->else
+whileKeyword->while
+ioKeyword->scan
+ioKeyword->print
+program->programKeyword compoundStatement
+declaration->identifier typeSpecifierKeyword type
+declaration->identifier typeSpecifierKeyword type assignmentKeyword expression
 basicType->bool
 basicType->int
 basicType->string
-arrayType->basicType [ nonZeroNatNr ]
+arrayType->basicType arraySizeStartSeparator nonZeroNatNr arraySizeEndSeparator
 type->basicType
 type->arrayType
-compoundStatement->{ statementList }
+compoundStatement->scopeStartSeparator statementList scopeEndSeparator
 statementList->statement
-statementList->statement ; statementList
+statementList->statement statementSeparator statementList
 statement->declaration
 statement->assignmentStatement
 statement->operationStatement
-assignmentStatement->identifier = expression
+assignmentStatement->identifier assignmentKeyword expression
 expression->term
 expression->expression lowPrecedenceOperator term
 term->factor
 term->term highPrecedenceOperator factor
-factor->( expression )
+factor->openedParenthesis expression closedParenthesis
 factor->identifier
 factor->integer
 factor->boolConstant
-ioKeyword->scan
-ioKeyword->print
-ioStatement->ioKeyword ( identifier )
+ioStatement->ioKeyword openedParenthesis identifier closedParenthesis
 operationStatement->compoundStatement
 operationStatement->ifStatement
 operationStatement->whileStatement
-ifStatement->if ( condition ) compoundStatement
-ifStatement->if ( condition ) compoundStatement else compoundStatement
-whileStatement->while ( condition ) compoundStatement
+ifStatement->ifKeyword openedParenthesis condition closedParenthesis compoundStatement
+ifStatement->ifKeyword openedParenthesis condition closedParenthesis compoundStatement elseKeyword compoundStatement
+whileStatement->whileKeyword openedParenthesis condition closedParenthesis compoundStatement
 condition->expression logicOperator expression

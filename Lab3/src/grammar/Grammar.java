@@ -16,6 +16,7 @@ public class Grammar {
     private Set<String> productions;
     private String productionSymbol;
     private String startingSymbol;
+    private String initialStartingSymbol;
     private FileHandler fileHandler;
     private String fileName;
 
@@ -27,6 +28,7 @@ public class Grammar {
         this.fileName = fileName;
         this.productionSymbol = "";
         this.startingSymbol = "";
+        this.initialStartingSymbol = "";
     }
 
     private void storeNonTerminals(String nonTerminals){
@@ -54,6 +56,7 @@ public class Grammar {
             terminals = tokenizedContents.get(1);
             this.productionSymbol = tokenizedContents.get(2);
             this.startingSymbol = tokenizedContents.get(3);
+            this.initialStartingSymbol = this.startingSymbol;
             storeNonTerminals(nonTerminals);
             storeTerminals(terminals);
         }
@@ -137,6 +140,10 @@ public class Grammar {
 
     public String getStartingSymbol() {
         return startingSymbol;
+    }
+
+    public String getInitialStartingSymbol() {
+        return initialStartingSymbol;
     }
 
     public void setStartingSymbol(String startingSymbol) {
