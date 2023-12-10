@@ -1,11 +1,15 @@
 package parser;
 
+import com.jakewharton.fliptables.FlipTable;
 import grammar.Grammar;
+import utils.FileHandler;
 
 import java.io.IOException;
 import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class LR {
     private final Grammar grammar;
@@ -14,6 +18,24 @@ public class LR {
         this.grammar = new Grammar(fileName);
         this.grammar.scanGrammar();
         enrichGrammar();
+    }
+
+    private class Entry {
+        public List<String> currentS;
+
+        public boolean wasPropagated = false;
+        public int previousSIndex = -1;
+
+        String X;
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            Entry otherEntry = (Entry) obj;
+            return Objects.equals(currentS, otherEntry.currentS) && previousSIndex == otherEntry.previousSIndex
+                    && X.equals(otherEntry.X) && (!wasPropagated && !otherEntry.wasPropagated);
+        }
     }
 
     public Grammar getGrammar() {
@@ -90,13 +112,15 @@ public class LR {
         return closure(analysisElements);
     }
 
-    public List<List<String>> DetermineCanonicalCollection() throws Exception {
-        List<List<String>> canonicalCollection = new ArrayList<>();
+    public List<Entry> DetermineCanonicalCollection() throws Exception {
+        List<Entry> canonicalCollection = new ArrayList<>();
 
         String initialProduction = "S'->. " + grammar.getInitialStartingSymbol();
         List<String> initialElement = new ArrayList<>();
         initialElement.add(initialProduction);
-        canonicalCollection.add(closure(initialElement));
+        Entry initialEntry = new Entry();
+        initialEntry.currentS = closure(initialElement);
+        canonicalCollection.add(initialEntry);
 
         List<String> allSymbols = new ArrayList<>();
         allSymbols.addAll(grammar.getNonTerminals());
@@ -105,15 +129,27 @@ public class LR {
         boolean hasAdded = true;
         while (hasAdded) {
             hasAdded = false;
-            List<List<String>> pendingAdditions = new ArrayList<>();
+            List<Entry> pendingAdditions = new ArrayList<>();
 
-            for (List<String> s : canonicalCollection) {
-                for (String X : allSymbols) {
-                    List<String> gotoCollection = goto_(s, X);
-                    if (!gotoCollection.isEmpty() && !canonicalCollection.contains(gotoCollection)
-                        && !pendingAdditions.contains(gotoCollection)) {
-                        pendingAdditions.add(gotoCollection);
-                        hasAdded = true;
+            for(int i = 0; i < canonicalCollection.size(); i++) {
+                Entry entry = canonicalCollection.get(i);
+                if(!entry.wasPropagated){
+                    for (String X : allSymbols) {
+                        List<String> gotoCollection = goto_(entry.currentS, X);
+                        if (!gotoCollection.isEmpty()) {
+                            Entry newEntry = new Entry();
+                            newEntry.currentS = gotoCollection;
+                            newEntry.previousSIndex = i;
+                            newEntry.X = X;
+                            if(canonicalCollection.stream().noneMatch(s -> s.equals(newEntry))
+                                    && pendingAdditions.stream().noneMatch(pending -> pending.equals(newEntry))) {
+                                if(entry.currentS.equals(gotoCollection)){
+                                    newEntry.wasPropagated = true;
+                                }
+                                pendingAdditions.add(newEntry);
+                                hasAdded = true;
+                            }
+                        }
                     }
                 }
             }
@@ -121,6 +157,79 @@ public class LR {
         }
 
         return canonicalCollection;
+    }
+
+    private boolean isDotAtEnd(String production){
+        boolean isAtEnd = false;
+
+        int index = production.indexOf(".");
+        if(index == production.length() - 1){
+            isAtEnd = true;
+        }
+
+        return isAtEnd;
+    }
+
+    private String checkAction(List<String> s){
+        String action = "shift";
+        String acceptProduction = "S'->S .";
+        String start = "S'";
+        for(String production: s){
+            if(production.compareTo(acceptProduction) == 0){
+                action = "accept";
+                break;
+            } else if (isDotAtEnd(production)) {
+                int arrowIndex = production.indexOf("->");
+                String leftSide = production.substring(0, arrowIndex);
+                if(!(leftSide.compareTo(start) == 0)){
+                    action = "reduce";
+                    break;
+                }
+            }
+        }
+        return action;
+    }
+
+    public void printParsingTable() throws Exception {
+        FileHandler fileHandler = new FileHandler();
+        List<Entry> canonicalCollection = this.DetermineCanonicalCollection();
+        String[] headers = {" ", "action"};
+        List<String> symbols = new ArrayList<>();
+        symbols.addAll(Arrays.stream(headers).toList());
+        symbols.addAll(grammar.getNonTerminals().stream().toList());
+        symbols.addAll(grammar.getTerminals().stream().toList());
+        String[][] data = new String[canonicalCollection.size()][symbols.size()];
+        int rowIndex = 0;
+        for(Entry entry: canonicalCollection){
+            List<String> s = entry.currentS;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("[");
+            for(int i = 0; i < s.size()-1; i++){
+                stringBuilder.append(s.get(i));
+                stringBuilder.append(", ");
+            }
+            stringBuilder.append(s.get(s.size()-1));
+            stringBuilder.append("]");
+            data[rowIndex][0] = stringBuilder.toString();
+            data[rowIndex][1] = checkAction(s);
+            for(int j = 2; j < symbols.size(); j ++){
+                data[rowIndex][j] = " ";
+                for(int k = 0; k < canonicalCollection.size(); k++){
+                    Entry otherEntry = canonicalCollection.get(k);
+                    if(otherEntry.previousSIndex == rowIndex){
+                        if(otherEntry.X.compareTo(symbols.get(j)) == 0){
+                            data[rowIndex][j] = "s" + k;
+                            break;
+                        }
+                    }
+                }
+            }
+            data[rowIndex][0] += " (s" + rowIndex + ")";
+            rowIndex += 1;
+        }
+        String parsingTable = FlipTable.of(symbols.toArray(new String[0]), data);
+        fileHandler.writeToFile("parsingTable.txt", parsingTable);
+        System.out.println(parsingTable);
     }
 
     public String productionsToString(){
