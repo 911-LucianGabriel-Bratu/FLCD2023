@@ -186,17 +186,22 @@ public class LR {
         String action = "shift";
         String acceptProduction = "S'->S .";
         String start = "S'";
+        boolean hasShift = false;
         for(String production: s){
             if(production.compareTo(acceptProduction) == 0){
                 action = "accept";
-                break;
             } else if (isDotAtEnd(production)) {
                 int arrowIndex = production.indexOf("->");
                 String leftSide = production.substring(0, arrowIndex);
                 if(!(leftSide.compareTo(start) == 0)){
+                    if (action.equals("reduce") || hasShift) {
+                        return hasShift ? "shift-reduce conflict" : "reduce-reduce conflict";
+                    }
                     action = "reduce";
-                    break;
                 }
+            }
+            else {
+                hasShift = true;
             }
         }
         return action;
@@ -210,9 +215,28 @@ public class LR {
         symbols.addAll(Arrays.stream(headers).toList());
         symbols.addAll(grammar.getNonTerminals().stream().toList());
         symbols.addAll(grammar.getTerminals().stream().toList());
-        String[][] data = new String[canonicalCollection.size()][symbols.size()];
         int rowIndex = 0;
-        for(Entry entry: canonicalCollection){
+        List<Entry> validEntries = new ArrayList<Entry>();
+        for (int i = 0; i < canonicalCollection.size(); i++) {
+            if (canonicalCollection.get(i).parentS != -1) {
+                for (int j = i + 1; j < canonicalCollection.size(); j++) {
+                    Entry jEntry = canonicalCollection.get(j);
+                    if (jEntry.parentS != -1 && jEntry.parentS > i) {
+                        jEntry.parentS--;
+                    }
+                    if (jEntry.previousSIndex > i) {
+                        jEntry.previousSIndex--;
+                    }
+                }
+            }
+            else {
+                validEntries.add(canonicalCollection.get(i));
+            }
+        }
+
+        boolean youWillBeHelped = false;
+        String[][] data = new String[validEntries.size()][symbols.size()];
+        for(Entry entry: validEntries){
             List<String> s = entry.currentS;
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("[");
@@ -223,11 +247,16 @@ public class LR {
             stringBuilder.append(s.get(s.size()-1));
             stringBuilder.append("]");
             data[rowIndex][0] = stringBuilder.toString();
-            data[rowIndex][1] = checkAction(s);
+            String actionString = checkAction(s);
+            if (actionString.contains(" ")) {
+                System.out.println("LR(0) " + actionString + " on row " + rowIndex);
+                youWillBeHelped = true;
+            }
+            data[rowIndex][1] = actionString;
             for(int j = 2; j < symbols.size(); j ++){
                 data[rowIndex][j] = " ";
-                for(int k = 0; k < canonicalCollection.size(); k++){
-                    Entry otherEntry = canonicalCollection.get(k);
+                for(int k = 0; k < validEntries.size(); k++){
+                    Entry otherEntry = validEntries.get(k);
                     if(otherEntry.previousSIndex == rowIndex){
                         if(otherEntry.X.compareTo(symbols.get(j)) == 0){
                             if (otherEntry.parentS != -1) {
@@ -245,6 +274,10 @@ public class LR {
         String parsingTable = FlipTable.of(symbols.toArray(new String[0]), data);
         fileHandler.writeToFile("parsingTable.txt", parsingTable);
         System.out.println(parsingTable);
+
+        if (youWillBeHelped) {
+            System.out.println("We will be helped to solve the conflicts :)");
+        }
     }
 
     public String productionsToString(){
