@@ -23,7 +23,7 @@ public class LR {
     private class Entry {
         public List<String> currentS;
 
-        public boolean wasPropagated = false;
+        public int parentS = -1;
         public int previousSIndex = -1;
 
         String X;
@@ -33,8 +33,8 @@ public class LR {
             if (this == obj) return true;
             if (obj == null || getClass() != obj.getClass()) return false;
             Entry otherEntry = (Entry) obj;
-            return Objects.equals(currentS, otherEntry.currentS) && previousSIndex == otherEntry.previousSIndex
-                    && X.equals(otherEntry.X) && (!wasPropagated && !otherEntry.wasPropagated);
+            return currentS.equals(otherEntry.currentS) && previousSIndex == otherEntry.previousSIndex
+                    && X.equals(otherEntry.X);
         }
     }
 
@@ -126,34 +126,46 @@ public class LR {
         allSymbols.addAll(grammar.getNonTerminals());
         allSymbols.addAll(grammar.getTerminals());
 
-        boolean hasAdded = true;
-        while (hasAdded) {
-            hasAdded = false;
-            List<Entry> pendingAdditions = new ArrayList<>();
-
-            for(int i = 0; i < canonicalCollection.size(); i++) {
-                Entry entry = canonicalCollection.get(i);
-                if(!entry.wasPropagated){
+        List<Entry> pendingAdditions = new ArrayList<>();
+        pendingAdditions.add(initialEntry);
+        while (!pendingAdditions.isEmpty()) {
+            List<Entry> newPendingAdditions = new ArrayList<>();
+            for(int i = 0; i < pendingAdditions.size(); i++) {
+                Entry entry = pendingAdditions.get(i);
+                if(entry.parentS == -1) {
                     for (String X : allSymbols) {
                         List<String> gotoCollection = goto_(entry.currentS, X);
                         if (!gotoCollection.isEmpty()) {
                             Entry newEntry = new Entry();
                             newEntry.currentS = gotoCollection;
-                            newEntry.previousSIndex = i;
+                            newEntry.previousSIndex = canonicalCollection.size() - pendingAdditions.size() + i;
                             newEntry.X = X;
                             if(canonicalCollection.stream().noneMatch(s -> s.equals(newEntry))
-                                    && pendingAdditions.stream().noneMatch(pending -> pending.equals(newEntry))) {
-                                if(entry.currentS.equals(gotoCollection)){
-                                    newEntry.wasPropagated = true;
+                                    && newPendingAdditions.stream().noneMatch(s -> s.equals(newEntry))) {
+//                                if (canonicalCollection.size() > 7) {
+//                                    if (X.equals("b") && i == 4) {
+//                                        boolean are_the_same = canonicalCollection.get(4).equals(newEntry);
+//                                        System.out.println(are_the_same);
+//                                    }
+//                                }
+                                for (int j = 0; j < canonicalCollection.size(); j++) {
+                                    if (canonicalCollection.get(j).currentS.equals(gotoCollection)) {
+                                        newEntry.parentS = j;
+                                    }
                                 }
-                                pendingAdditions.add(newEntry);
-                                hasAdded = true;
+                                for (int j = 0; j < newPendingAdditions.size(); j++) {
+                                    if (newPendingAdditions.get(j).currentS.equals(gotoCollection)) {
+                                        newEntry.parentS = j + canonicalCollection.size();
+                                    }
+                                }
+                                newPendingAdditions.add(newEntry);
                             }
                         }
                     }
                 }
             }
-            canonicalCollection.addAll(pendingAdditions);
+            canonicalCollection.addAll(newPendingAdditions);
+            pendingAdditions = newPendingAdditions;
         }
 
         return canonicalCollection;
@@ -218,6 +230,9 @@ public class LR {
                     Entry otherEntry = canonicalCollection.get(k);
                     if(otherEntry.previousSIndex == rowIndex){
                         if(otherEntry.X.compareTo(symbols.get(j)) == 0){
+                            if (otherEntry.parentS != -1) {
+                                k = otherEntry.parentS;
+                            }
                             data[rowIndex][j] = "s" + k;
                             break;
                         }
