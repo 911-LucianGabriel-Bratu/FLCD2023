@@ -148,12 +148,6 @@ public class LR {
                             newEntry.X = X;
                             if(allEntries.stream().noneMatch(s -> s.equals(newEntry))
                                     && newPendingAdditions.stream().noneMatch(s -> s.equals(newEntry))) {
-//                                if (canonicalCollection.size() > 7) {
-//                                    if (X.equals("b") && i == 4) {
-//                                        boolean are_the_same = canonicalCollection.get(4).equals(newEntry);
-//                                        System.out.println(are_the_same);
-//                                    }
-//                                }
                                 for (int j = 0; j < allEntries.size(); j++) {
                                     if (allEntries.get(j).currentS.equals(gotoCollection)) {
                                         newEntry.parentS = j;
@@ -328,12 +322,12 @@ public class LR {
             }
             if (isShift) {
                 if (!hasItem) {
-                    System.out.println("Line " + rowIndex + " s-a basit cu shift");
+                    System.out.println("Line " + rowIndex + " is trolling with shift");
                 }
             }
             else if (isReduce) {
                 if (hasItem) {
-                    System.out.println("Line " + rowIndex + " s-a basit cu reduce");
+                    System.out.println("Line " + rowIndex + " is trolling with reduce");
                 }
             }
             data[rowIndex][0] += " (s" + rowIndex + ")";
