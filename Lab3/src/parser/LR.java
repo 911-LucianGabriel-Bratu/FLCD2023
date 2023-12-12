@@ -20,7 +20,7 @@ public class LR {
         enrichGrammar();
     }
 
-    private class Entry {
+    public class Entry {
         public List<String> currentS;
 
         public int parentS = -1;
@@ -36,6 +36,12 @@ public class LR {
             return currentS.equals(otherEntry.currentS) && previousSIndex == otherEntry.previousSIndex
                     && X.equals(otherEntry.X);
         }
+    }
+
+    public class CanonicalCollection {
+        List<Entry> validEntries;
+        List<Integer> decrementCount;
+        List<Entry> allEntries;
     }
 
     public Grammar getGrammar() {
@@ -112,15 +118,15 @@ public class LR {
         return closure(analysisElements);
     }
 
-    public List<Entry> DetermineCanonicalCollection() throws Exception {
-        List<Entry> canonicalCollection = new ArrayList<>();
+    public CanonicalCollection DetermineCanonicalCollection() throws Exception {
+        List<Entry> allEntries = new ArrayList<>();
 
         String initialProduction = "S'->. " + grammar.getInitialStartingSymbol();
         List<String> initialElement = new ArrayList<>();
         initialElement.add(initialProduction);
         Entry initialEntry = new Entry();
         initialEntry.currentS = closure(initialElement);
-        canonicalCollection.add(initialEntry);
+        allEntries.add(initialEntry);
 
         List<String> allSymbols = new ArrayList<>();
         allSymbols.addAll(grammar.getNonTerminals());
@@ -138,9 +144,9 @@ public class LR {
                         if (!gotoCollection.isEmpty()) {
                             Entry newEntry = new Entry();
                             newEntry.currentS = gotoCollection;
-                            newEntry.previousSIndex = canonicalCollection.size() - pendingAdditions.size() + i;
+                            newEntry.previousSIndex = allEntries.size() - pendingAdditions.size() + i;
                             newEntry.X = X;
-                            if(canonicalCollection.stream().noneMatch(s -> s.equals(newEntry))
+                            if(allEntries.stream().noneMatch(s -> s.equals(newEntry))
                                     && newPendingAdditions.stream().noneMatch(s -> s.equals(newEntry))) {
 //                                if (canonicalCollection.size() > 7) {
 //                                    if (X.equals("b") && i == 4) {
@@ -148,14 +154,14 @@ public class LR {
 //                                        System.out.println(are_the_same);
 //                                    }
 //                                }
-                                for (int j = 0; j < canonicalCollection.size(); j++) {
-                                    if (canonicalCollection.get(j).currentS.equals(gotoCollection)) {
+                                for (int j = 0; j < allEntries.size(); j++) {
+                                    if (allEntries.get(j).currentS.equals(gotoCollection)) {
                                         newEntry.parentS = j;
                                     }
                                 }
                                 for (int j = 0; j < newPendingAdditions.size(); j++) {
                                     if (newPendingAdditions.get(j).currentS.equals(gotoCollection)) {
-                                        newEntry.parentS = j + canonicalCollection.size();
+                                        newEntry.parentS = j + allEntries.size();
                                     }
                                 }
                                 newPendingAdditions.add(newEntry);
@@ -164,10 +170,52 @@ public class LR {
                     }
                 }
             }
-            canonicalCollection.addAll(newPendingAdditions);
+            allEntries.addAll(newPendingAdditions);
             pendingAdditions = newPendingAdditions;
         }
 
+        CanonicalCollection canonicalCollection = new CanonicalCollection();
+        canonicalCollection.allEntries = allEntries;
+        canonicalCollection.validEntries = new ArrayList<Entry>();
+        canonicalCollection.decrementCount = new ArrayList<Integer>();
+        List<Integer> previousIndexDecrementCount = new ArrayList<Integer>();
+        List<Integer> parentSDecrementCount = new ArrayList<Integer>();
+        for (int i = 0; i < allEntries.size(); i++) {
+            canonicalCollection.decrementCount.add(0);
+            previousIndexDecrementCount.add(0);
+            parentSDecrementCount.add(0);
+        }
+        for (int i = 0; i < allEntries.size(); i++) {
+            if (allEntries.get(i).parentS != -1) {
+                for (int j = i + 1; j < allEntries.size(); j++) {
+                    Entry jEntry = allEntries.get(j);
+                    if (jEntry.parentS != -1 && jEntry.parentS > i) {
+                        Integer jValue = parentSDecrementCount.get(j);
+                        jValue++;
+                        parentSDecrementCount.set(j, jValue);
+                    }
+                    else if (jEntry.parentS == -1) {
+                        Integer value = canonicalCollection.decrementCount.get(j);
+                        value++;
+                        canonicalCollection.decrementCount.set(j, value);
+                    }
+                    if (jEntry.previousSIndex > i) {
+                        Integer jValue = previousIndexDecrementCount.get(j);
+                        jValue++;
+                        previousIndexDecrementCount.set(j, jValue);
+                    }
+                }
+            }
+            else {
+                Entry addEntry = allEntries.get(i);
+                canonicalCollection.validEntries.add(addEntry);
+            }
+        }
+
+        for (int i = 0; i < allEntries.size(); i++) {
+            Entry entry = allEntries.get(i);
+            entry.previousSIndex -= previousIndexDecrementCount.get(i);
+        }
         return canonicalCollection;
     }
 
@@ -184,7 +232,7 @@ public class LR {
 
     private String checkAction(List<String> s){
         String action = "shift";
-        String acceptProduction = "S'->S .";
+        String acceptProduction = "S'->" + grammar.getInitialStartingSymbol() + " .";
         String start = "S'";
         boolean hasShift = false;
         for(String production: s){
@@ -201,6 +249,9 @@ public class LR {
                 }
             }
             else {
+                if (action.equals("reduce")) {
+                    return "shift-reduce conflict";
+                }
                 hasShift = true;
             }
         }
@@ -209,34 +260,17 @@ public class LR {
 
     public void printParsingTable() throws Exception {
         FileHandler fileHandler = new FileHandler();
-        List<Entry> canonicalCollection = this.DetermineCanonicalCollection();
+        CanonicalCollection canonicalCollection = this.DetermineCanonicalCollection();
         String[] headers = {" ", "action"};
         List<String> symbols = new ArrayList<>();
         symbols.addAll(Arrays.stream(headers).toList());
         symbols.addAll(grammar.getNonTerminals().stream().toList());
         symbols.addAll(grammar.getTerminals().stream().toList());
         int rowIndex = 0;
-        List<Entry> validEntries = new ArrayList<Entry>();
-        for (int i = 0; i < canonicalCollection.size(); i++) {
-            if (canonicalCollection.get(i).parentS != -1) {
-                for (int j = i + 1; j < canonicalCollection.size(); j++) {
-                    Entry jEntry = canonicalCollection.get(j);
-                    if (jEntry.parentS != -1 && jEntry.parentS > i) {
-                        jEntry.parentS--;
-                    }
-                    if (jEntry.previousSIndex > i) {
-                        jEntry.previousSIndex--;
-                    }
-                }
-            }
-            else {
-                validEntries.add(canonicalCollection.get(i));
-            }
-        }
 
         boolean youWillBeHelped = false;
-        String[][] data = new String[validEntries.size()][symbols.size()];
-        for(Entry entry: validEntries){
+        String[][] data = new String[canonicalCollection.validEntries.size()][symbols.size()];
+        for(Entry entry: canonicalCollection.validEntries){
             List<String> s = entry.currentS;
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("[");
@@ -248,24 +282,58 @@ public class LR {
             stringBuilder.append("]");
             data[rowIndex][0] = stringBuilder.toString();
             String actionString = checkAction(s);
+            boolean isShiftReduceConflict = false;
+            boolean isShift = false;
+            boolean isReduce = false;
             if (actionString.contains(" ")) {
                 System.out.println("LR(0) " + actionString + " on row " + rowIndex);
+                if (actionString.equals("shift-reduce conflict")) {
+                    isShiftReduceConflict = true;
+                }
                 youWillBeHelped = true;
             }
+            else {
+                if (actionString.equals("shift")) {
+                    isShift = true;
+                }
+                else if (actionString.equals("reduce")) {
+                    isReduce = true;
+                }
+            }
             data[rowIndex][1] = actionString;
-            for(int j = 2; j < symbols.size(); j ++){
+            for(int j = 2; j < symbols.size(); j ++) {
                 data[rowIndex][j] = " ";
-                for(int k = 0; k < validEntries.size(); k++){
-                    Entry otherEntry = validEntries.get(k);
-                    if(otherEntry.previousSIndex == rowIndex){
-                        if(otherEntry.X.compareTo(symbols.get(j)) == 0){
-                            if (otherEntry.parentS != -1) {
-                                k = otherEntry.parentS;
+                if (!isShiftReduceConflict) {
+                    for (int k = 0; k < canonicalCollection.allEntries.size(); k++) {
+                        Entry otherEntry = canonicalCollection.allEntries.get(k);
+                        if (otherEntry.previousSIndex == rowIndex) {
+                            if (otherEntry.X.compareTo(symbols.get(j)) == 0) {
+                                while (otherEntry.parentS != -1) {
+                                    k = otherEntry.parentS;
+                                    otherEntry = canonicalCollection.allEntries.get(k);
+                                }
+                                k -= canonicalCollection.decrementCount.get(k);
+                                data[rowIndex][j] = "s" + k;
+                                break;
                             }
-                            data[rowIndex][j] = "s" + k;
-                            break;
                         }
                     }
+                }
+            }
+            boolean hasItem = false;
+            for (int i = 2; i < data[rowIndex].length; i++) {
+                if (!data[rowIndex][i].equals(" ")) {
+                    hasItem = true;
+                }
+            }
+            if (isShift) {
+                if (!hasItem) {
+                    System.out.println("Line " + rowIndex + " s-a basit cu shift");
+                }
+            }
+            else if (isReduce) {
+                if (hasItem) {
+                    System.out.println("Line " + rowIndex + " s-a basit cu reduce");
                 }
             }
             data[rowIndex][0] += " (s" + rowIndex + ")";
