@@ -1,0 +1,15 @@
+{
+integer n;
+integer sum = 0;
+integer i;
+integer x;
+
+read(n);
+
+for(i = 1; i <= n; i = i + 1){
+read(x);
+sum = sum + x;
+}
+
+print(sum);
+}
