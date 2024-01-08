@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Grammar {
     private Set<String> terminals;
@@ -62,7 +63,17 @@ public class Grammar {
         }
         if(lines.get(1).charAt(0) == this.productionSymbol.charAt(0)){
             List<String> remainingLines = lines.subList(2, lines.size());
-            this.productions.addAll(remainingLines);
+            this.productions.addAll(remainingLines.stream().map(line -> {
+                        List<String> tokenized = Tokenizer.tokenize(line, "->");
+                        if(tokenized.size() == 2){
+                            if(tokenized.get(1).compareTo("epsilon") == 0){
+                                return tokenized.get(0).concat("->");
+                            }
+                        }
+                        return line;
+                    }
+
+            ).toList());
         }
     }
 
