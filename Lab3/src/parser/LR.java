@@ -3,13 +3,12 @@ package parser;
 import com.jakewharton.fliptables.FlipTable;
 import grammar.Grammar;
 import utils.FileHandler;
+import utils.Pair;
+import utils.Tokenizer;
 
 import java.io.IOException;
 import java.sql.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class LR {
     private final Grammar grammar;
@@ -40,14 +39,14 @@ public class LR {
 
     public class ParserRow {
         public int index;
-        public String nonTerminal;
+        public String symbol;
 
         public int parent;
         public int rightSibling;
 
         public ParserRow(int index, String nonTerminal, int parent, int rightSibling) {
             this.index = index;
-            this.nonTerminal = nonTerminal;
+            this.symbol = nonTerminal;
             this.parent = parent;
             this.rightSibling = rightSibling;
         }
@@ -63,14 +62,62 @@ public class LR {
         }
 
         public String toString(){
-            return "LR farted hard";
+            StringBuilder builder = new StringBuilder();
+            for (ParserRow row : parserRows) {
+                builder.append("(").append(row.index).append(", ").append(row.symbol)
+                        .append(", ").append(row.parent).append(", ").append(row.rightSibling)
+                        .append(")\n");
+            }
+            return builder.toString();
         }
     }
 
     public class CanonicalCollection {
+        public int getRealParent(int parentS) {
+            int realParent = parentS;
+            while (parentS != -1) {
+                realParent = parentS;
+                parentS = allEntries.get(parentS).parentS;
+            }
+            return realParent;
+        }
+
+        public int getRealIndex(int entryIndex) {
+            return entryIndex - decrementCount.get(entryIndex);
+        }
+
         List<Entry> validEntries;
         List<Integer> decrementCount;
         List<Entry> allEntries;
+    }
+
+    public enum State {
+        SHIFT,
+        REDUCE,
+        SHIFT_REDUCE,
+        REDUCE_REDUCE,
+        ACCEPT
+    }
+
+    public class ParsingTableRow {
+        public State state;
+        public Map<String, Integer> goto_map;
+        public String reductionProduction;
+    }
+
+    public class ParsingTable {
+        public List<ParsingTableRow> rows;
+
+        public String toString() {
+            String string = new String();
+
+            for (int index = 0; index < rows.size(); index++) {
+                ParsingTableRow row = rows.get(index);
+                string += index + " | " + row.state.toString() + " | " + row.goto_map.toString() + " | " + row.reductionProduction + "\n";
+            }
+
+            return string;
+        }
     }
 
     public Grammar getGrammar() {
@@ -281,6 +328,70 @@ public class LR {
         return action;
     }
 
+    public State getStateEnum(String string) throws Exception {
+        if (string.compareTo("shift") == 0) {
+            return State.SHIFT;
+        }
+        else if (string.compareTo("reduce") == 0) {
+            return State.REDUCE;
+        }
+        else if (string.compareTo("shift-reduce conflict") == 0) {
+            return State.SHIFT_REDUCE;
+        }
+        else if (string.compareTo("reduce-reduce conflict") == 0) {
+            return State.REDUCE_REDUCE;
+        }
+        else if (string.compareTo("accept") == 0) {
+            return State.ACCEPT;
+        }
+        else {
+            throw new Exception("LR state has farted");
+        }
+    }
+
+    public ParsingTable getParsingTable() throws Exception {
+        ParsingTable table = new ParsingTable();
+        table.rows = new ArrayList<ParsingTableRow>();
+
+        CanonicalCollection canonicalCollection = this.DetermineCanonicalCollection();
+        List<String> symbols = new ArrayList<>();
+        symbols.addAll(grammar.getNonTerminals().stream().toList());
+        symbols.addAll(grammar.getTerminals().stream().toList());
+
+        for (int rowIndex = 0; rowIndex < canonicalCollection.validEntries.size(); rowIndex++){
+            Entry currentEntry = canonicalCollection.validEntries.get(rowIndex);
+            ParsingTableRow row = new ParsingTableRow();
+            row.state = getStateEnum(checkAction(currentEntry.currentS));
+            row.goto_map = new HashMap<>();
+            for (int j = 0; j < symbols.size(); j++) {
+                for (int k = 0; k < canonicalCollection.allEntries.size(); k++) {
+                    Entry otherEntry = canonicalCollection.allEntries.get(k);
+                    if (otherEntry.previousSIndex == rowIndex) {
+                        if (otherEntry.X.compareTo(symbols.get(j)) == 0) {
+                            int realParent = canonicalCollection.getRealParent(otherEntry.parentS);
+                            if (realParent != -1) {
+                                k = realParent;
+                            }
+                            k = canonicalCollection.getRealIndex(k);
+                            row.goto_map.put(symbols.get(j), k);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (row.state == State.REDUCE) {
+                String dotProduction = currentEntry.currentS.get(0);
+                row.reductionProduction = dotProduction.substring(0, dotProduction.length() - 2);
+            }
+            else {
+                row.reductionProduction = "";
+            }
+            table.rows.add(row);
+        }
+
+        return table;
+    }
+
     public void printParsingTable() throws Exception {
         FileHandler fileHandler = new FileHandler();
         CanonicalCollection canonicalCollection = this.DetermineCanonicalCollection();
@@ -331,11 +442,11 @@ public class LR {
                         Entry otherEntry = canonicalCollection.allEntries.get(k);
                         if (otherEntry.previousSIndex == rowIndex) {
                             if (otherEntry.X.compareTo(symbols.get(j)) == 0) {
-                                while (otherEntry.parentS != -1) {
-                                    k = otherEntry.parentS;
-                                    otherEntry = canonicalCollection.allEntries.get(k);
+                                int realParent = canonicalCollection.getRealParent(otherEntry.parentS);
+                                if (realParent != -1) {
+                                    k = realParent;
                                 }
-                                k -= canonicalCollection.decrementCount.get(k);
+                                k = canonicalCollection.getRealIndex(k);
                                 data[rowIndex][j] = "s" + k;
                                 break;
                             }
@@ -382,8 +493,130 @@ public class LR {
         return this.grammar.productionsForAGivenNonTerminal(nonTerminal);
     }
 
-    public ParserOutput parseSequence(List<String> sequence){
+    public ParserOutput parseSequence(List<String> sequence) throws Exception {
         ParserOutput parserOutput = new ParserOutput();
-        return parserOutput;
+
+        ParsingTable table = getParsingTable();
+
+        Stack<Pair<Integer, String>> workStack = new Stack<>();
+        List<String> outputStack = new ArrayList<>();
+
+        int lastSIndex = 0;
+
+        for (String nonTerminal : sequence) {
+            ParsingTableRow row = table.rows.get(lastSIndex);
+            if (row.state != State.SHIFT) {
+                throw new Exception("LR 0 fart while emptying input stack");
+            }
+            else {
+                workStack.add(new Pair<Integer, String>(lastSIndex, nonTerminal));
+                lastSIndex = row.goto_map.get(nonTerminal);
+            }
+        }
+
+        List<Pair<String, String>> splitProductions = new ArrayList<>();
+        for (String production : grammar.getProductions()) {
+            List<String> part = Tokenizer.tokenize(production, "->");
+            splitProductions.add(new Pair<String, String>(part.get(0), part.get(1)));
+        }
+
+        while (!workStack.isEmpty()) {
+            ParsingTableRow lastSIndexRow = table.rows.get(lastSIndex);
+            if (lastSIndexRow.state == State.ACCEPT) {
+                int outputRowIndex = 0;
+                int processingIndex = 0;
+                Stack<Integer> unprocessedProductions = new Stack<>();
+
+                String initialProduction = outputStack.get(outputStack.size() - 1);
+                List<String> split = Tokenizer.tokenize(initialProduction, "->");
+                String left = split.get(0);
+                String right = split.get(1);
+                List<String> rightSymbols = Tokenizer.tokenize(right, " ");
+
+                ParserRow initialOutputRow = new ParserRow();
+                initialOutputRow.index = outputRowIndex;
+                initialOutputRow.parent = -1;
+                initialOutputRow.rightSibling = -1;
+                initialOutputRow.symbol = left;
+                parserOutput.parserRows.add(initialOutputRow);
+                outputRowIndex++;
+                for (int j = 0; j < rightSymbols.size(); j++) {
+                    ParserRow childRow = new ParserRow();
+                    childRow.index = outputRowIndex;
+                    childRow.symbol = rightSymbols.get(j);
+                    childRow.parent = 0;
+                    if (j < rightSymbols.size() - 1) {
+                        childRow.rightSibling = outputRowIndex + 1;
+                    }
+                    else {
+                        childRow.rightSibling = -1;
+                    }
+                    parserOutput.parserRows.add(childRow);
+                    unprocessedProductions.add(childRow.index);
+                    outputRowIndex++;
+                }
+
+                processingIndex++;
+
+                while (!unprocessedProductions.isEmpty()) {
+                    Integer element = unprocessedProductions.pop();
+                    String symbol = parserOutput.parserRows.get(element).symbol;
+                    if (grammar.getNonTerminals().contains(symbol)) {
+                        String production = outputStack.get(outputStack.size() - 1 - processingIndex);
+                        split = Tokenizer.tokenize(production, "->");
+                        left = split.get(0);
+                        if (left.compareTo(symbol) == 0) {
+                            right = split.get(1);
+                            rightSymbols = Tokenizer.tokenize(right, " ");
+
+                            for (int j = 0; j < rightSymbols.size(); j++) {
+                                ParserRow childRow = new ParserRow();
+                                childRow.index = outputRowIndex;
+                                childRow.symbol = rightSymbols.get(j);
+                                childRow.parent = element;
+                                if (j < rightSymbols.size() - 1) {
+                                    childRow.rightSibling = outputRowIndex + 1;
+                                } else {
+                                    childRow.rightSibling = -1;
+                                }
+                                parserOutput.parserRows.add(childRow);
+                                unprocessedProductions.add(childRow.index);
+                                outputRowIndex++;
+                            }
+                        }
+                        processingIndex++;
+                    }
+                }
+                return parserOutput;
+            }
+
+            boolean iterationStop = false;
+            for (int i = 1; i <= workStack.size() && !iterationStop; i++) {
+                String concatenatedToken = "";
+                for (int j = 0; j < i; j++) {
+                    Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
+                    concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
+                }
+                concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
+                for (Pair<String, String> splitProduction : splitProductions) {
+                    if (concatenatedToken.compareTo(splitProduction.getSecond()) == 0) {
+                        outputStack.add(table.rows.get(lastSIndex).reductionProduction);
+
+                        for (int j = 0; j < i - 1; j++) {
+                            workStack.pop();
+                        }
+                        Pair<Integer, String> reduceSEntry = workStack.pop();
+                        lastSIndex = reduceSEntry.getFirst();
+
+                        workStack.add(new Pair<>(lastSIndex, splitProduction.getFirst()));
+                        ParsingTableRow reduceRow = table.rows.get(lastSIndex);
+                        lastSIndex = reduceRow.goto_map.get(splitProduction.getFirst());
+                        iterationStop = true;
+                        break;
+                    }
+                }
+            }
+        }
+        throw new Exception("This fart is too big to be ignored");
     }
 }

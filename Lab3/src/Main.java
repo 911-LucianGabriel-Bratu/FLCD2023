@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) throws Exception {
         //LRParserDemo();
-        parseG1();
+        //parseG1();
+        parseG2("p1.txt");
     }
 
     public static void parseG1() throws Exception{
@@ -30,11 +31,11 @@ public class Main {
         System.out.println(lr.parseSequence(sequence).toString());
     }
 
-    public static void parseG2() throws Exception{
+    public static void parseG2(String file) throws Exception{
         MyScanner myScanner = new MyScanner();
         myScanner.scanForTokens("token.in");
         try{
-            myScanner.scanProgram("p1.txt");
+            myScanner.scanProgram(file);
         }
         catch (Exception e){
             System.out.println(e.getMessage());
@@ -43,7 +44,7 @@ public class Main {
                 .map(Pair::getFirst)
                 .toList();
         LR lr = new LR("g2.txt");
-        //TODO
+        System.out.print(lr.parseSequence(tokens).toString());
     }
 
     public static void LRParserDemo() throws Exception {
