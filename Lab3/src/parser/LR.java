@@ -38,6 +38,35 @@ public class LR {
         }
     }
 
+    public class ParserRow {
+        public int index;
+        public String nonTerminal;
+
+        public int parent;
+        public int rightSibling;
+
+        public ParserRow(int index, String nonTerminal, int parent, int rightSibling) {
+            this.index = index;
+            this.nonTerminal = nonTerminal;
+            this.parent = parent;
+            this.rightSibling = rightSibling;
+        }
+
+        public ParserRow() {}
+    }
+
+    public class ParserOutput {
+        public List<ParserRow> parserRows;
+
+        public ParserOutput() {
+            parserRows = new ArrayList<>();
+        }
+
+        public String toString(){
+            return "LR farted hard";
+        }
+    }
+
     public class CanonicalCollection {
         List<Entry> validEntries;
         List<Integer> decrementCount;
@@ -340,6 +369,9 @@ public class LR {
         if (youWillBeHelped) {
             System.out.println("We will be helped to solve the conflicts :)");
         }
+        else{
+            System.out.println("We were helped :)");
+        }
     }
 
     public String productionsToString(){
@@ -348,5 +380,10 @@ public class LR {
 
     public List<String> getProductionsForNonTerminal(String nonTerminal) throws Exception{
         return this.grammar.productionsForAGivenNonTerminal(nonTerminal);
+    }
+
+    public ParserOutput parseSequence(List<String> sequence){
+        ParserOutput parserOutput = new ParserOutput();
+        return parserOutput;
     }
 }

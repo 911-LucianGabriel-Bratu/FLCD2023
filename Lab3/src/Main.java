@@ -4,14 +4,46 @@ import parser.LR;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
 import utils.MyScanner;
+import utils.Pair;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        //GrammarDemo();
-        LRParserDemo();
+        //LRParserDemo();
+        parseG1();
+    }
+
+    public static void parseG1() throws Exception{
+        LR lr = new LR("g1.txt");
+        List<String> sequence = new ArrayList<>();
+        sequence.add("a");
+        sequence.add("b");
+        sequence.add("b");
+        sequence.add("c");
+        System.out.println(lr.parseSequence(sequence).toString());
+    }
+
+    public static void parseG2() throws Exception{
+        MyScanner myScanner = new MyScanner();
+        myScanner.scanForTokens("token.in");
+        try{
+            myScanner.scanProgram("p1.txt");
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+        List<String> tokens = myScanner.getPIF().stream()
+                .map(Pair::getFirst)
+                .toList();
+        LR lr = new LR("g2.txt");
+        //TODO
     }
 
     public static void LRParserDemo() throws Exception {
