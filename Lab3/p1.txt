@@ -1,11 +1,12 @@
-integer a;
-integer i;
-integer nrDiv = 0;
+{
+a : int;
+i : int;
+nrDiv : int = 0;
 
 read(a);
 
-for(i = 2; i <= a div 2; i = i + 1) {
-if(a mod 2 == 0){
+for(i = 2; i <= a / 2; i = i + 1) {
+if(a % 2 == 0){
 nrDiv = nrDiv + 1;
 }
 }
@@ -15,4 +16,5 @@ print("a is not prime");
 }
 else {
 print("a is prime");
+}
 }

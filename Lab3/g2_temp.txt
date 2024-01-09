@@ -1,4 +1,4 @@
-G=({letter,nonZeroDigit,digit,digitList,character,string,identifier,naturalNr,nonZeroNatNr,integer,boolConstant,lowPrecedenceOperator,highPrecedenceOperator,logicOperator,program,declaration,declarationAssignment,basicType,type,compoundStatement,statementList,statementListAux,statement,assignmentStatement,expression,auxExpression,auxTerm,term,factor,ioKeyword,ioStatement,operationStatement,ifStatement,ifStatementElse,whileStatement,condition,assignmentKeyword,typeSpecifierKeyword,arraySizeStartSeparator,arraySize,arraySizeEndSeparator,scopeStartSeparator,scopeEndSeparator,statementSeparator,openedParenthesis,closedParenthesis,ifKeyword,elseKeyword,whileKeyword,ioKeyword,ioKeyword,epsilon};{Q,W,E,R,T,Y,U,I,O,P,A,S,D,F,G,H,J,K,L,Z,X,C,V,B,N,M,q,w,e,r,t,y,u,i,o,p,a,s,d,f,g,h,j,k,l,z,x,c,v,b,n,m,0,1,2,3,4,5,6,7,8,9,+,-,*,/,%,<,>,=,:,!};P;program)
+G=({letter,nonZeroDigit,digit,digitList,character,string,identifier,naturalNr,nonZeroNatNr,integer,boolConstant,lowPrecedenceOperator,highPrecedenceOperator,logicOperator,program,declaration,declarationAssignment,basicType,type,compoundStatement,statementList,statementListAux,statement,assignmentStatement,expression,auxExpression,auxTerm,term,factor,ioKeyword,ioStatement,operationStatement,ifStatement,ifStatementElse,whileStatement,condition,assignmentKeyword,arraySizeStartSeparator,arraySize,arraySizeEndSeparator,scopeStartSeparator,scopeEndSeparator,statementSeparator,openedParenthesis,closedParenthesis,ifKeyword,elseKeyword,whileKeyword,ioKeyword,ioKeyword,epsilon};{Q,W,E,R,T,Y,U,I,O,P,A,S,D,F,G,H,J,K,L,Z,X,C,V,B,N,M,q,w,e,r,t,y,u,i,o,p,a,s,d,f,g,h,j,k,l,z,x,c,v,b,n,m,0,1,2,3,4,5,6,7,8,9,+,-,*,/,%,<,>,=,!};P;program)
 P:
 letter->Q
 letter->W
@@ -91,7 +91,6 @@ logicOperator->!=
 logicOperator->>=
 logicOperator->>
 assignmentKeyword->=
-typeSpecifierKeyword->:
 arraySizeStartSeparator->[
 arraySizeEndSeparator->]
 scopeStartSeparator->{
@@ -105,7 +104,7 @@ whileKeyword->while
 ioKeyword->read
 ioKeyword->print
 program->compoundStatement
-declaration->identifier typeSpecifierKeyword type declarationAssignment
+declaration->type identifier declarationAssignment
 declarationAssignment->assignmentKeyword expression
 declarationAssignment->epsilon
 basicType->bool

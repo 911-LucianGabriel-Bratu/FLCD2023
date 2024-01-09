@@ -496,33 +496,56 @@ public class LR {
     public ParserOutput parseSequence(List<String> sequence) throws Exception {
         ParserOutput parserOutput = new ParserOutput();
 
+        List<Pair<String, String>> fakeNonTerminals = new ArrayList<>();
+        for (String production : grammar.getProductions()) {
+            List<String> split = Tokenizer.tokenize(production, "->");
+            if (split.size() > 1) {
+                if (Tokenizer.tokenize(split.get(1), " ").size() == 1) {
+                    if (!grammar.getNonTerminals().contains(split.get(1))) {
+                        fakeNonTerminals.add(new Pair<>(split.get(1), split.get(0)));
+                    }
+                }
+            }
+        }
+
+        List<String> sequenceRemapped = new ArrayList<>(sequence);
+        for (int index = 0; index < sequenceRemapped.size(); index++) {
+            String currentString = sequenceRemapped.get(index);
+            for (int subindex = 0; subindex < fakeNonTerminals.size(); subindex++) {
+                Pair<String, String> fakeEntry = fakeNonTerminals.get(subindex);
+                if (currentString.compareTo(fakeEntry.getFirst()) == 0) {
+                    sequenceRemapped.set(index, fakeEntry.getSecond());
+                    break;
+                }
+            }
+        }
+        sequence = sequenceRemapped;
+
         ParsingTable table = getParsingTable();
+
+        List<Pair<String, String>> splitProductions = new ArrayList<>();
+        List<String> epsilonProductions = new ArrayList<>();
+        for (String production : grammar.getProductions()) {
+            List<String> part = Tokenizer.tokenize(production, "->");
+            if (part.size() == 1) {
+                splitProductions.add(new Pair<>(part.get(0), ""));
+                epsilonProductions.add(part.get(0));
+            }
+            else {
+                splitProductions.add(new Pair<String, String>(part.get(0), part.get(1)));
+            }
+        }
 
         Stack<Pair<Integer, String>> workStack = new Stack<>();
         List<String> outputStack = new ArrayList<>();
 
         int lastSIndex = 0;
 
-        for (String nonTerminal : sequence) {
+        int sequenceIndex = 0;
+        while (!workStack.isEmpty() || sequenceIndex == 0) {
+            String nonTerminal = sequence.get(sequenceIndex);
             ParsingTableRow row = table.rows.get(lastSIndex);
-            if (row.state != State.SHIFT) {
-                throw new Exception("LR 0 fart while emptying input stack");
-            }
-            else {
-                workStack.add(new Pair<Integer, String>(lastSIndex, nonTerminal));
-                lastSIndex = row.goto_map.get(nonTerminal);
-            }
-        }
-
-        List<Pair<String, String>> splitProductions = new ArrayList<>();
-        for (String production : grammar.getProductions()) {
-            List<String> part = Tokenizer.tokenize(production, "->");
-            splitProductions.add(new Pair<String, String>(part.get(0), part.get(1)));
-        }
-
-        while (!workStack.isEmpty()) {
-            ParsingTableRow lastSIndexRow = table.rows.get(lastSIndex);
-            if (lastSIndexRow.state == State.ACCEPT) {
+            if (row.state == State.ACCEPT) {
                 int outputRowIndex = 0;
                 int processingIndex = 0;
                 Stack<Integer> unprocessedProductions = new Stack<>();
@@ -589,34 +612,114 @@ public class LR {
                 }
                 return parserOutput;
             }
-
-            boolean iterationStop = false;
-            for (int i = 1; i <= workStack.size() && !iterationStop; i++) {
-                String concatenatedToken = "";
-                for (int j = 0; j < i; j++) {
-                    Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
-                    concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
+            else if (row.state == State.SHIFT) {
+                sequenceIndex++;
+                workStack.add(new Pair<Integer, String>(lastSIndex, nonTerminal));
+                Integer possibleLastSIndex = row.goto_map.get(nonTerminal);
+                if (possibleLastSIndex != null) {
+                    lastSIndex = possibleLastSIndex;
                 }
-                concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
-                for (Pair<String, String> splitProduction : splitProductions) {
-                    if (concatenatedToken.compareTo(splitProduction.getSecond()) == 0) {
-                        outputStack.add(table.rows.get(lastSIndex).reductionProduction);
-
-                        for (int j = 0; j < i - 1; j++) {
-                            workStack.pop();
-                        }
-                        Pair<Integer, String> reduceSEntry = workStack.pop();
-                        lastSIndex = reduceSEntry.getFirst();
-
-                        workStack.add(new Pair<>(lastSIndex, splitProduction.getFirst()));
-                        ParsingTableRow reduceRow = table.rows.get(lastSIndex);
-                        lastSIndex = reduceRow.goto_map.get(splitProduction.getFirst());
-                        iterationStop = true;
-                        break;
+                else {
+                    possibleLastSIndex = row.goto_map.get("epsilon");
+                    if (possibleLastSIndex != null) {
+                        lastSIndex = possibleLastSIndex;
+                    }
+                    else {
+                        throw new Exception("LR 0 fart while shifting");
                     }
                 }
             }
+            else if (row.state == State.REDUCE) {
+                ParsingTableRow lastSIndexRow = table.rows.get(lastSIndex);
+                boolean iterationStop = false;
+                for (int i = 1; i <= workStack.size() && !iterationStop; i++) {
+                    String concatenatedToken = "";
+                    for (int j = 0; j < i; j++) {
+                        Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
+                        concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
+                    }
+                    concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
+                    for (Pair<String, String> splitProduction : splitProductions) {
+                        if (concatenatedToken.compareTo(splitProduction.getSecond()) == 0) {
+                            outputStack.add(table.rows.get(lastSIndex).reductionProduction);
+
+                            for (int j = 0; j < i - 1; j++) {
+                                workStack.pop();
+                            }
+                            Pair<Integer, String> reduceSEntry = workStack.pop();
+                            lastSIndex = reduceSEntry.getFirst();
+
+                            workStack.add(new Pair<>(lastSIndex, splitProduction.getFirst()));
+                            ParsingTableRow reduceRow = table.rows.get(lastSIndex);
+                            Integer possibleLastSIndex = reduceRow.goto_map.get(splitProduction.getFirst());
+                            if (possibleLastSIndex == null) {
+                                possibleLastSIndex = row.goto_map.get("epsilon");
+                            }
+
+                            if (possibleLastSIndex != null) {
+                                lastSIndex = possibleLastSIndex;
+                            }
+                            else {
+                                throw new Exception("Yet another LR 0 fart");
+                            }
+
+                            iterationStop = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!iterationStop) {
+                    throw new Exception("LR 0 farts keep on coming");
+                }
+            }
+            else {
+                throw new Exception("LR 0 farts again man");
+            }
         }
+
+//        while (!workStack.isEmpty()) {
+//            ParsingTableRow lastSIndexRow = table.rows.get(lastSIndex);
+//            if (lastSIndexRow.state == State.ACCEPT) {
+//
+//            }
+//
+//            boolean iterationStop = false;
+//            for (int i = 1; i <= workStack.size() && !iterationStop; i++) {
+//                String concatenatedToken = "";
+//                for (int j = 0; j < i; j++) {
+//                    Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
+//                    concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
+//                }
+//                concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
+//                for (Pair<String, String> splitProduction : splitProductions) {
+//                    if (concatenatedToken.compareTo(splitProduction.getSecond()) == 0) {
+//                        outputStack.add(table.rows.get(lastSIndex).reductionProduction);
+//
+//                        for (int j = 0; j < i - 1; j++) {
+//                            workStack.pop();
+//                        }
+//                        Pair<Integer, String> reduceSEntry = workStack.pop();
+//                        lastSIndex = reduceSEntry.getFirst();
+//
+//                        workStack.add(new Pair<>(lastSIndex, splitProduction.getFirst()));
+//                        ParsingTableRow reduceRow = table.rows.get(lastSIndex);
+//                        Integer possibleLastSIndex = reduceRow.goto_map.get(splitProduction.getFirst());
+//                        if (possibleLastSIndex == null) {
+//                            for (String gotoString : reduceRow.goto_map.keySet()) {
+//                                if (epsilonProductions.contains(gotoString)) {
+//                                    possibleLastSIndex = reduceRow.goto_map.get(gotoString);
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                        lastSIndex = possibleLastSIndex;
+//                        iterationStop = true;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
         throw new Exception("This fart is too big to be ignored");
     }
 }

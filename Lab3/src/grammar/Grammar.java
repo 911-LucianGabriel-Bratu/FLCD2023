@@ -67,7 +67,7 @@ public class Grammar {
                         List<String> tokenized = Tokenizer.tokenize(line, "->");
                         if(tokenized.size() == 2){
                             if(tokenized.get(1).compareTo("epsilon") == 0){
-                                return tokenized.get(0).concat("->");
+                                //return tokenized.get(0).concat("->");
                             }
                         }
                         return line;

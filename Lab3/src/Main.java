@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        //LRParserDemo();
+        LRParserDemo();
         //parseG1();
         parseG2("p1.txt");
     }

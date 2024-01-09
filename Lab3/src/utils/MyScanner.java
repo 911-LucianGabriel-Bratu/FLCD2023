@@ -25,7 +25,7 @@ public class MyScanner {
         List<String> lines = fileHandler.readFile(fileName);
         List<String> res;
         for(String line: lines){
-            res = Tokenizer.tokenize(line.trim(), ":");
+            res = Tokenizer.tokenize(line.trim(), "$");
             if(res.size() > 0){
                 tokens.put(res.get(0), Tokenizer.tokenize(res.get(1), ", "));
             }
@@ -96,7 +96,8 @@ public class MyScanner {
         for (String str : line) {
             StringBuilder token = new StringBuilder();
             for (char c : str.toCharArray()) {
-                if (!tokens.get("delimiters").contains(String.valueOf(c))) {
+                if (!tokens.get("delimiters").contains(String.valueOf(c))
+                && !tokens.get("separators").contains(String.valueOf(c))) {
                     token.append(c);
                 } else {
                     if (token.length() > 0) {
@@ -142,7 +143,10 @@ public class MyScanner {
                             PIF.add(new Pair<>(entry, -1));
                         } else if (Objects.equals(entry, ";")) {
                             PIF.add(new Pair<>(entry, -1));
-                        } else if (integersFA.isDFAValid(entry)) {
+                        } else if (Objects.equals(entry, ":")) {
+                            PIF.add(new Pair<>(entry, -1));
+                        }
+                        else if (integersFA.isDFAValid(entry)) {
                             if(symbolTable.getRoot() == null){
                                 BSTNode bstNode = new BSTNode(Integer.parseInt(entry));
                                 PIF.add(new Pair<>("constant", bstNode.getValue().getFirst()));
@@ -169,18 +173,18 @@ public class MyScanner {
                             if(identifiersFA.isDFAValid(entry)){
                                 if(symbolTable.getRoot() == null){
                                     BSTNode bstNode = new BSTNode(entry);
-                                    PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                    PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                     symbolTable.setRoot(bstNode);
                                 }
                                 else {
                                     if(symbolTable.searchForValue(symbolTable.getRoot(), entry) == null){
                                         BSTNode bstNode = new BSTNode(entry);
-                                        PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                        PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                         symbolTable.insert(symbolTable.getRoot(), bstNode);
                                     }
                                     else{
                                         BSTNode bstNode = symbolTable.searchForValue(symbolTable.getRoot(), entry);
-                                        PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                        PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                     }
                                 }
                             }
@@ -190,18 +194,18 @@ public class MyScanner {
                                     if(identifiersFA.isDFAValid(entry_sliced)){
                                         if(symbolTable.getRoot() == null){
                                             BSTNode bstNode = new BSTNode(entry_sliced);
-                                            PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                            PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                             symbolTable.setRoot(bstNode);
                                         }
                                         else {
                                             if(symbolTable.searchForValue(symbolTable.getRoot(), entry_sliced) == null){
                                                 BSTNode bstNode = new BSTNode(entry_sliced);
-                                                PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                                PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                                 symbolTable.insert(symbolTable.getRoot(), bstNode);
                                             }
                                             else{
                                                 BSTNode bstNode = symbolTable.searchForValue(symbolTable.getRoot(), entry_sliced);
-                                                PIF.add(new Pair<>("id", bstNode.getValue().getFirst()));
+                                                PIF.add(new Pair<>("identifier", bstNode.getValue().getFirst()));
                                             }
                                         }
                                         PIF.add(new Pair<>(";", -1));
