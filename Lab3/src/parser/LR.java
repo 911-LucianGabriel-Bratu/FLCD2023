@@ -496,30 +496,30 @@ public class LR {
     public ParserOutput parseSequence(List<String> sequence) throws Exception {
         ParserOutput parserOutput = new ParserOutput();
 
-        List<Pair<String, String>> fakeNonTerminals = new ArrayList<>();
-        for (String production : grammar.getProductions()) {
-            List<String> split = Tokenizer.tokenize(production, "->");
-            if (split.size() > 1) {
-                if (Tokenizer.tokenize(split.get(1), " ").size() == 1) {
-                    if (!grammar.getNonTerminals().contains(split.get(1))) {
-                        fakeNonTerminals.add(new Pair<>(split.get(1), split.get(0)));
-                    }
-                }
-            }
-        }
+//        List<Pair<String, String>> fakeNonTerminals = new ArrayList<>();
+//        for (String production : grammar.getProductions()) {
+//            List<String> split = Tokenizer.tokenize(production, "->");
+//            if (split.size() > 1) {
+//                if (Tokenizer.tokenize(split.get(1), " ").size() == 1) {
+//                    if (!grammar.getNonTerminals().contains(split.get(1))) {
+//                        fakeNonTerminals.add(new Pair<>(split.get(1), split.get(0)));
+//                    }
+//                }
+//            }
+//        }
 
-        List<String> sequenceRemapped = new ArrayList<>(sequence);
-        for (int index = 0; index < sequenceRemapped.size(); index++) {
-            String currentString = sequenceRemapped.get(index);
-            for (int subindex = 0; subindex < fakeNonTerminals.size(); subindex++) {
-                Pair<String, String> fakeEntry = fakeNonTerminals.get(subindex);
-                if (currentString.compareTo(fakeEntry.getFirst()) == 0) {
-                    sequenceRemapped.set(index, fakeEntry.getSecond());
-                    break;
-                }
-            }
-        }
-        sequence = sequenceRemapped;
+//        List<String> sequenceRemapped = new ArrayList<>(sequence);
+//        for (int index = 0; index < sequenceRemapped.size(); index++) {
+//            String currentString = sequenceRemapped.get(index);
+//            for (int subindex = 0; subindex < fakeNonTerminals.size(); subindex++) {
+//                Pair<String, String> fakeEntry = fakeNonTerminals.get(subindex);
+//                if (currentString.compareTo(fakeEntry.getFirst()) == 0) {
+//                    sequenceRemapped.set(index, fakeEntry.getSecond());
+//                    break;
+//                }
+//            }
+//        }
+//        sequence = sequenceRemapped;
 
         ParsingTable table = getParsingTable();
 
@@ -543,7 +543,6 @@ public class LR {
 
         int sequenceIndex = 0;
         while (!workStack.isEmpty() || sequenceIndex == 0) {
-            String nonTerminal = sequence.get(sequenceIndex);
             ParsingTableRow row = table.rows.get(lastSIndex);
             if (row.state == State.ACCEPT) {
                 int outputRowIndex = 0;
@@ -586,7 +585,7 @@ public class LR {
                     String symbol = parserOutput.parserRows.get(element).symbol;
                     if (grammar.getNonTerminals().contains(symbol)) {
                         String production = outputStack.get(outputStack.size() - 1 - processingIndex);
-                        split = Tokenizer.tokenize(production, "->");
+                        split = Arrays.stream(production.split("->")).toList();
                         left = split.get(0);
                         if (left.compareTo(symbol) == 0) {
                             right = split.get(1);
@@ -606,22 +605,24 @@ public class LR {
                                 unprocessedProductions.add(childRow.index);
                                 outputRowIndex++;
                             }
+                            processingIndex++;
                         }
-                        processingIndex++;
                     }
                 }
                 return parserOutput;
             }
             else if (row.state == State.SHIFT) {
-                sequenceIndex++;
-                workStack.add(new Pair<Integer, String>(lastSIndex, nonTerminal));
+                String nonTerminal = sequence.get(sequenceIndex);
                 Integer possibleLastSIndex = row.goto_map.get(nonTerminal);
                 if (possibleLastSIndex != null) {
+                    workStack.add(new Pair<>(lastSIndex, nonTerminal));
                     lastSIndex = possibleLastSIndex;
+                    sequenceIndex++;
                 }
                 else {
                     possibleLastSIndex = row.goto_map.get("epsilon");
                     if (possibleLastSIndex != null) {
+                        workStack.add(new Pair<>(lastSIndex, "epsilon"));
                         lastSIndex = possibleLastSIndex;
                     }
                     else {
@@ -630,47 +631,46 @@ public class LR {
                 }
             }
             else if (row.state == State.REDUCE) {
-                ParsingTableRow lastSIndexRow = table.rows.get(lastSIndex);
+                //List<String> splitProduction = Tokenizer.tokenize(row.reductionProduction, "->");
+                List<String> splitProduction = Arrays.stream(row.reductionProduction.split("->")).toList();
+                String rightSide = splitProduction.get(1);
+                List<String> rsTokenized = Tokenizer.tokenize(rightSide, " ");
+                if(rsTokenized.size() > workStack.size()){
+                    throw new Exception("This LR is doodoo");
+                }
+                int i = rsTokenized.size();
                 boolean iterationStop = false;
-                for (int i = 1; i <= workStack.size() && !iterationStop; i++) {
-                    String concatenatedToken = "";
-                    for (int j = 0; j < i; j++) {
-                        Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
-                        concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
-                    }
-                    concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
-                    for (Pair<String, String> splitProduction : splitProductions) {
-                        if (concatenatedToken.compareTo(splitProduction.getSecond()) == 0) {
-                            outputStack.add(table.rows.get(lastSIndex).reductionProduction);
-
-                            for (int j = 0; j < i - 1; j++) {
-                                workStack.pop();
-                            }
-                            Pair<Integer, String> reduceSEntry = workStack.pop();
-                            lastSIndex = reduceSEntry.getFirst();
-
-                            workStack.add(new Pair<>(lastSIndex, splitProduction.getFirst()));
-                            ParsingTableRow reduceRow = table.rows.get(lastSIndex);
-                            Integer possibleLastSIndex = reduceRow.goto_map.get(splitProduction.getFirst());
-                            if (possibleLastSIndex == null) {
-                                possibleLastSIndex = row.goto_map.get("epsilon");
-                            }
-
-                            if (possibleLastSIndex != null) {
-                                lastSIndex = possibleLastSIndex;
-                            }
-                            else {
-                                throw new Exception("Yet another LR 0 fart");
-                            }
-
-                            iterationStop = true;
-                            break;
-                        }
-                    }
+                String concatenatedToken = "";
+                for (int j = 0; j < i; j++) {
+                    Pair<Integer, String> entry = workStack.get(workStack.size() - i + j);
+                    concatenatedToken = concatenatedToken.concat(entry.getSecond() + " ");
                 }
 
-                if (!iterationStop) {
-                    throw new Exception("LR 0 farts keep on coming");
+                concatenatedToken = concatenatedToken.substring(0, concatenatedToken.length() - 1);
+
+                if(concatenatedToken.compareTo(rightSide) != 0){
+                    throw new Exception("This subject sucks");
+                }
+
+                outputStack.add(table.rows.get(lastSIndex).reductionProduction);
+
+                for (int j = 0; j < i - 1; j++) {
+                    workStack.pop();
+                }
+                Pair<Integer, String> reduceSEntry = workStack.pop();
+                lastSIndex = reduceSEntry.getFirst();
+
+                workStack.add(new Pair<>(lastSIndex, splitProduction.get(0)));
+                ParsingTableRow reduceRow = table.rows.get(lastSIndex);
+                Integer possibleLastSIndex = reduceRow.goto_map.get(splitProduction.get(0));
+                if (possibleLastSIndex == null) {
+                    possibleLastSIndex = reduceRow.goto_map.get("epsilon");
+                }
+
+                if (possibleLastSIndex != null) {
+                    lastSIndex = possibleLastSIndex;
+                } else {
+                    throw new Exception("Yet another LR 0 fart");
                 }
             }
             else {

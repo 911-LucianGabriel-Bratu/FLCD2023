@@ -52,7 +52,7 @@ public class Grammar {
             String line = lines.get(0);
             String contents = line.substring(2);
             contents = contents.substring(1, contents.length()-1);
-            List<String> tokenizedContents = Tokenizer.tokenize(contents, ";");
+            List<String> tokenizedContents = Tokenizer.tokenize(contents, "$");
             nonTerminals = tokenizedContents.get(0);
             terminals = tokenizedContents.get(1);
             this.productionSymbol = tokenizedContents.get(2);

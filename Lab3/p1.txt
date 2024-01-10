@@ -5,10 +5,8 @@ nrDiv : int = 0;
 
 read(a);
 
-for(i = 2; i <= a / 2; i = i + 1) {
 if(a % 2 == 0){
 nrDiv = nrDiv + 1;
-}
 }
 
 if(nrDiv > 0) {

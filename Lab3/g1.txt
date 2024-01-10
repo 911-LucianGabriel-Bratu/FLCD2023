@@ -1,4 +1,4 @@
-G=({S,A};{a,b,c};P;S)
+G=({S,A}${a,b,c}$P$S)
 P:
 S->a A
 A->b A

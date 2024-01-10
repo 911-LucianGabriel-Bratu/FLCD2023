@@ -1,9 +1,6 @@
 package utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Tokenizer {
