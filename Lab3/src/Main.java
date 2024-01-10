@@ -3,6 +3,7 @@ import grammar.Grammar;
 import parser.LR;
 import symbol_table.BSTNode;
 import symbol_table.SymbolTable;
+import utils.FileHandler;
 import utils.MyScanner;
 import utils.Pair;
 
@@ -29,7 +30,10 @@ public class Main {
         sequence.add("b");
         sequence.add("b");
         sequence.add("c");
-        System.out.println(lr.parseSequence(sequence).toString());
+        FileHandler handler = new FileHandler();
+        String parserOutput = lr.parseSequence(sequence).toString();
+        System.out.print(parserOutput);
+        handler.writeToFile("outG1.txt", parserOutput);
     }
 
     public static void parseG2(String file) throws Exception{
@@ -45,7 +49,10 @@ public class Main {
                 .map(Pair::getFirst)
                 .toList();
         LR lr = new LR("g2.txt");
-        System.out.print(lr.parseSequence(tokens).toString());
+        FileHandler handler = new FileHandler();
+        String parserOutput = lr.parseSequence(tokens).toString();
+        System.out.print(parserOutput);
+        handler.writeToFile("outG2.txt", parserOutput);
     }
 
     public static void LRParserDemo() throws Exception {
